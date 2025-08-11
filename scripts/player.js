@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
 import { World } from "./world";
 import { blocks } from "./blocks";
-import { Tool } from "./tool";
 
 const CENTER_SCREEN = new THREE.Vector2();
 
@@ -25,9 +24,7 @@ export class Player {
 
     raycaster = new THREE.Raycaster(undefined, undefined, 0, 3);
     selectedCoords = null;
-    activeBlockId = blocks.empty.id;
 
-    tool = new Tool();
 
     /**
      * @param {THREE.Scene} scene 
@@ -47,7 +44,7 @@ export class Player {
             document.getElementById('overlay').style.visibility = 'visible';
         });
 
-        this.camera.add(this.tool);
+     
 
         document.addEventListener('keydown', this.onKeyDown.bind(this));
         document.addEventListener('keyup', this.onKeyUp.bind(this));
@@ -87,7 +84,7 @@ export class Player {
      */
     update(world) {
         this.updateRaycaster(world);
-        this.tool.update();
+       
     }
 
     /**
@@ -95,38 +92,27 @@ export class Player {
      * @param {World} world 
      */
     updateRaycaster(world) {
-        this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
-        const intersections = this.raycaster.intersectObject(world, true);
+    this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
+    const intersections = this.raycaster.intersectObject(world, true);
 
-        if (intersections.length > 0) {
-            const intersection = intersections[0];
+    if (intersections.length > 0) {
+        const intersection = intersections[0];
+        const chunk = intersection.object.parent;
+        const blockMatrix = new THREE.Matrix4();
+        intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
 
-            // Get the position of the chunk that the block is contained in
-            const chunk = intersection.object.parent;
-
-            // Get transformation matrix of the intersected block
-            const blockMatrix = new THREE.Matrix4();
-            intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
-
-            // Extract the position from the block's transformation matrix
-            // and store it in selectedCoords
-            this.selectedCoords = chunk.position.clone();
-            this.selectedCoords.applyMatrix4(blockMatrix);
-
-            // If we are adding a block to the world, move the selection indicator
-            // to the nearest adjacent block
-            if (this.activeBlockId !== blocks.empty.id) {
-                this.selectedCoords.add(intersection.normal);
-            }
-
-            this.selectionHelper.position.copy(this.selectedCoords);
-            this.selectionHelper.visible = true;
-            
-        } else {
-            this.selectedCoords = null;
-            this.selectionHelper.visible = false;
-        }
+        // Guardamos ambas posiciones:
+        this.hitCoords = chunk.position.clone().applyMatrix4(blockMatrix); // Bloque actual
+        this.selectedCoords = this.hitCoords.clone().add(intersection.normal); // Posición adyacente
+        
+        this.selectionHelper.position.copy(this.selectedCoords);
+        this.selectionHelper.visible = true;
+    } else {
+        this.hitCoords = null;
+        this.selectedCoords = null;
+        this.selectionHelper.visible = false;
     }
+}
 
     /**
      * Applies a change in velocity 'dv' that is specified in the world frame
@@ -169,50 +155,34 @@ export class Player {
      * @param {KeyboardEvent} event 
      */
     onKeyDown(event) {
-        if (!this.controls.isLocked) {
-            this.controls.lock();
-        }
-
-        switch (event.code) {
-            case 'Digit0':
-            case 'Digit1':
-            case 'Digit2':
-            case 'Digit3':
-            case 'Digit4':
-            case 'Digit5':
-            case 'Digit6':
-            case 'Digit7':
-            case 'Digit8':
-                document.getElementById(`toolbar-${this.activeBlockId}`).classList.remove('selected');
-                this.activeBlockId = Number(event.key);
-                document.getElementById(`toolbar-${this.activeBlockId}`).classList.add('selected');
-
-                // Only show the tool when it is currently active
-                this.tool.visible = (this.activeBlockId === 0);
-                break;
-            case 'KeyW':
-                this.input.z = this.maxSpeed;
-                break;
-            case 'KeyA':
-                this.input.x = -this.maxSpeed;
-                break;
-            case 'KeyS':
-                this.input.z = -this.maxSpeed;
-                break;
-            case 'KeyD':
-                this.input.x = this.maxSpeed;
-                break;
-            case 'Space':
-                if (this.onGround) {
-                    this.velocity.y += this.jumpSpeed;
-                }
-                break;
-            case 'ShiftLeft':
-            case 'ShiftRight':
-                this.sprinting = true;
-                break;
-        }
+    if (!this.controls.isLocked) {
+        this.controls.lock();
     }
+
+    switch (event.code) {
+        case 'KeyW':
+            this.input.z = this.maxSpeed;
+            break;
+        case 'KeyA':
+            this.input.x = -this.maxSpeed;
+            break;
+        case 'KeyS':
+            this.input.z = -this.maxSpeed;
+            break;
+        case 'KeyD':
+            this.input.x = this.maxSpeed;
+            break;
+        case 'Space':
+            if (this.onGround) {
+                this.velocity.y += this.jumpSpeed;
+            }
+            break;
+        case 'ShiftLeft':
+        case 'ShiftRight':
+            this.sprinting = true;
+            break;
+    }
+}
 
     /**
      * @param {KeyboardEvent} event 

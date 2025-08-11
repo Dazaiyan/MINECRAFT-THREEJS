@@ -11,7 +11,16 @@ function loadTexture(path) {
 }
 
 const textures = {
-    
+    dirt: loadTexture('textures/dirt.png'),
+    grass: loadTexture('textures/grass.png'),
+    grassSide: loadTexture('textures/grass_side.png'),
+    stone: loadTexture('textures/stone.png'),
+    coalOre: loadTexture('textures/coal_ore.png'),
+    ironOre: loadTexture('textures/iron_ore.png'),
+    leaves: loadTexture('textures/leaves.png'),
+    treeSide: loadTexture('textures/tree_side.png'),
+    treeTop: loadTexture('textures/tree_top.png'),
+    sand: loadTexture('textures/sand.png')
 };
 
 export const blocks = {

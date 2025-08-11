@@ -2,10 +2,10 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { World } from "./world";
 import Stats from "three/examples/jsm/libs/stats.module.js";
+import { createUI } from "./ui";
 import { Player } from "./player";
 import { Physics } from "./physics";
 import { blocks } from "./blocks";
-import { ModelLoader } from "./modelLoader";
 
 const stats = new Stats();
 document.body.append(stats.dom);
@@ -38,10 +38,6 @@ scene.add(world);
 const player = new Player(scene);
 const physics = new Physics(scene);
 
-const modelLoader = new ModelLoader();
-modelLoader.loadModels((models) => {
-    player.tool.setMesh(models.pickaxe);
-});
 
 const sun = new THREE.DirectionalLight();
 
@@ -69,22 +65,19 @@ function setupLights() {
 }
 
 function onMouseDown(event) {
-    if (player.controls.isLocked && player.selectedCoords) {
-        if (player.activeBlockId === blocks.empty.id) {
-            // console.log(`Removing block at ${JSON.stringify(player.selectedCoords)}`);
+    if (player.controls.isLocked) {
+        if (event.button === 0 && player.hitCoords) { // Click izquierdo - eliminar
             world.removeBlock(
-                player.selectedCoords.x,
-                player.selectedCoords.y,
-                player.selectedCoords.z
+                player.hitCoords.x,
+                player.hitCoords.y,
+                player.hitCoords.z
             );
-            player.tool.startAnimation();
-        } else {
-            // console.log(`Adding block at ${JSON.stringify(player.selectedCoords)}`);
+        } else if (event.button === 2 && player.selectedCoords) { // Click derecho - colocar dirt
             world.addBlock(
                 player.selectedCoords.x,
                 player.selectedCoords.y,
                 player.selectedCoords.z,
-                player.activeBlockId
+                2 // ID de dirt
             );
         }
     }
@@ -125,4 +118,8 @@ window.addEventListener("resize", () => {
 })
 
 setupLights();
+createUI(scene, world, player, physics);
 animate();
+
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
