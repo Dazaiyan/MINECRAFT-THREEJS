@@ -6,6 +6,9 @@ import { createUI } from "./ui";
 import { Player } from "./player";
 import { Physics } from "./physics";
 import { blocks } from "./blocks";
+import { ModelLoader } from "./modelLoader";
+import { Tool } from "./tool";
+
 
 const stats = new Stats();
 document.body.append(stats.dom);
@@ -36,7 +39,11 @@ world.generate();
 scene.add(world);
 
 const player = new Player(scene);
+const modelLoader = new ModelLoader();
+const tool = new Tool();
+player.camera.add(tool);
 const physics = new Physics(scene);
+
 
 
 const sun = new THREE.DirectionalLight();
@@ -72,6 +79,7 @@ function onMouseDown(event) {
                 player.hitCoords.y,
                 player.hitCoords.z
             );
+            tool.startAnimation(); // Añadir esta línea
         } else if (event.button === 2 && player.selectedCoords) { // Click derecho - colocar dirt
             world.addBlock(
                 player.selectedCoords.x,
@@ -97,6 +105,7 @@ function animate() {
         player.update(world);
         physics.update(dt, player, world);
         world.update(player);
+        tool.update(); 
 
         sun.position.copy(player.position);
         sun.position.sub(new THREE.Vector3(-50, -50, -50));
@@ -107,7 +116,22 @@ function animate() {
     stats.update();
 
     previousTime = currentTime;
+
+    
 }
+
+modelLoader.loadModels((models) => {
+    if (models.pickaxe) {
+        tool.setMesh(models.pickaxe);
+        // Posición y rotación estilo Minecraft
+        tool.position.set(0.5, -0.5, -1);
+        tool.rotation.set(-Math.PI/8, Math.PI/4, Math.PI/8);
+        tool.scale.set(0.5, 0.5, 0.5);
+    }
+});
+renderer.onError = (error) => {
+    console.error('WebGL error:', error);
+};
 
 window.addEventListener("resize", () => {
     orbitCamera.aspect = window.innerWidth / window.innerHeight;
@@ -122,4 +146,3 @@ createUI(scene, world, player, physics);
 animate();
 
 document.addEventListener('contextmenu', (e) => e.preventDefault());
-

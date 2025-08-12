@@ -101,9 +101,8 @@ export class Player {
         const blockMatrix = new THREE.Matrix4();
         intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
 
-        // Guardamos ambas posiciones:
-        this.hitCoords = chunk.position.clone().applyMatrix4(blockMatrix); // Bloque actual
-        this.selectedCoords = this.hitCoords.clone().add(intersection.normal); // Posición adyacente
+        this.hitCoords = chunk.position.clone().applyMatrix4(blockMatrix);
+        this.selectedCoords = this.hitCoords.clone().add(intersection.normal);
         
         this.selectionHelper.position.copy(this.selectedCoords);
         this.selectionHelper.visible = true;
